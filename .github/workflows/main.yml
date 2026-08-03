@@ -1,0 +1,47 @@
+name: Build BYANO
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install Dependencies
+      run: |
+        brew install ldid xz
+        
+    - name: Setup Theos
+      run: |
+        git clone --recursive https://github.com/theos/theos.git $GITHUB_WORKSPACE/theos
+        echo "THEOS=$GITHUB_WORKSPACE/theos" >> $GITHUB_ENV
+        
+    - name: Download iOS SDK
+      run: |
+        git clone https://github.com/theos/sdks.git $GITHUB_WORKSPACE/theos/sdks
+        # We need iOS 16.5 SDK as specified in Makefile
+        # The theos/sdks repo usually has it, but let's ensure we have a working SDK
+        ls -l $GITHUB_WORKSPACE/theos/sdks
+        
+    - name: Build Package
+      run: |
+        export THEOS=$GITHUB_WORKSPACE/theos
+        cd $GITHUB_WORKSPACE
+        # Fixing THEOS path in Makefile if it's hardcoded
+        sed -i '' 's|^export THEOS =.*|export THEOS = '"$THEOS"'|' Makefile
+        make package FINALPACKAGE=1
+        
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: BYANO-DEB
+        path: packages/*.deb
