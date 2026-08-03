@@ -27,7 +27,9 @@ jobs:
         
     - name: Download iOS SDK
       run: |
-        git clone https://github.com/theos/sdks.git $GITHUB_WORKSPACE/theos/sdks
+        if [ ! -d "$GITHUB_WORKSPACE/theos/sdks" ]; then
+          git clone https://github.com/theos/sdks.git "$GITHUB_WORKSPACE/theos/sdks"
+        fi
         # We need iOS 16.5 SDK as specified in Makefile
         # The theos/sdks repo usually has it, but let's ensure we have a working SDK
         ls -l $GITHUB_WORKSPACE/theos/sdks
